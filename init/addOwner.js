@@ -1,19 +1,28 @@
 const mongoose = require("mongoose");
-const Listing = require("../models/listing.js"); // path to your listing model
 require("dotenv").config();
+const Listing = require("../models/listing.js");
 
-async function addOwner() {
-    await mongoose.connect(process.env.ATLASDB_URL);
+async function main() {
+    try {
+        await mongoose.connect(process.env.ATLASDB_URL);
+        console.log("Connected to MongoDB Atlas");
 
-    const ownerId = "68e289296f441d41c8c428c0"; // your user _id
+        // Use your admin user's _id
+        const adminUserId = "68e28fdbd562c475c9858033";
 
-    await Listing.updateMany(
-        { owner: { $exists: false } }, // only listings without owner
-        { $set: { owner: ownerId } }
-    );
+        const allListings = await Listing.find({});
+        for (let listing of allListings) {
+            listing.owner = new mongoose.Types.ObjectId(adminUserId);
+            await listing.save();
+        }
 
-    console.log("Owner added to all listings");
-    mongoose.connection.close();
+        console.log("✅ Owner added to all listings");
+
+    } catch (err) {
+        console.log(err);
+    } finally {
+        mongoose.connection.close();
+    }
 }
 
-addOwner();
+main();
